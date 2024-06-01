@@ -9,6 +9,7 @@ This code demo attempts to gives an overview of the main design concepts from th
 3. [Service Layer](#adding-the-service-layer)
 4. [Unit of Work Pattern](#unit-of-work-pattern)
 5. [Aggregates and Consistency Boundaries](#aggregates-and-consistency-boundaries)
+6. [Final Remarks](#final-remarks)
 
 ## Core Concepts
 
@@ -16,9 +17,13 @@ This code demo attempts to gives an overview of the main design concepts from th
 
 The domain model is the mental map that business owners have of their business. It describes real world objects or entities, their rules, and the relationships between them. Suppose we are a media distrubtor. A studio provides us a license to distribute their content that is the basis for some contractual agreement that was signed. From the license, we can create offers and assigned them to individual pieces of content. You can think of the license as holding the broad terms of the agreement, like what devices content can be distributed to. The offer is internal and contains information like price. Every piece of content needs to be assgned at least one offer and an offers start and end date cannot overlap.
 
-Relating this back to the domain model, a **license** has business logic or rules since it can create **offers** and assign it to a piece of content. Then a license has a one-to-many _relationship_ with its offers. For the purposes of this example, a license is _entity_ because along with it having business logic, we can change the terms of the license, and it will still be the same license. However, the offer is defined by its data, changing its data makes it a new offer.
+![Domain Models](/images/domain.png)
 
-So DDD is a top-down approach design philosophy for building software where we gather business requirements and construct the domain model first. For example, the lower level database schema design _depends on_ the higher level domain model. The idea is that this allows for more flexibilty when dealing with ever changing business requirements.
+Relating this back to the domain model, a **license** has business logic or rules around generating **offers**. Then a license is considered an _entity_ because it has business logic and when we change the terms of the license, it is still considered the _same_ license. For the purposes of this example, we consider an offer to be a _value object_ meaning that it is defined by its data. If we change a field in an offer, then it is considered a completely different offer.
+
+Then a license has a one-to-many _relationship_ with its offers. For the purposes of this example, a license is _entity_ because along with it having business logic, we can change the terms of the license, and it will still be the same license. However, the offer is defined by its data, changing its data makes it a new offer.
+
+DDD is a top-down approach design philosophy for building software where we gather business requirements and construct the domain model first. You may notice that a license has a one-to-many relationship with its offers or that and offer would have a FK to a license. These are implementation details we don't yet care about because we let the business requirements drive these decisions. We write the busines logic for our domain models then decide what the database schema needs. We want the lower level schema to _depends on_ the higher level domain model. This also allows for more flexibilty when dealing with ever changing business requirements.
 
 ### Encapsulation and Abstraction
 
@@ -38,7 +43,7 @@ We **encapsulate** behavior and data from the the layer above. The object that d
 
 ### Testing
 
-DDD and the architecure patterns here tend to work will with TDD (Test Driven Design) because of the focus on behavior, and the isolation of each module through abstraction. Here is some useful terminology for test doubles:
+DDD and the architecure patterns here tend to work well with TDD (Test Driven Design) because of the focus on behavior, and the isolation of each module through abstraction. Here is some useful terminology for test doubles:
 
 **Mock:** A mock verifies that a test has in interacted with an object in a certain way. For example, you could mock a function expected to upload a file given a file path. It return `True` if the file exists otherwise it raises an `Exception`. It tests _expectations_ for _dependencies_.
 
@@ -105,6 +110,26 @@ With the _Unit of Work_ (UOW) pattern is an abstraction over _atomic_ operations
 
 ## Aggregates and Consistency Boundaries
 
+A _constraint_ is a rule that restricts the possible states our model can get into. _invariant_ is a condition on a constraint that must _always hold true_. For example, suppose we implment the constraint that _offer_ start and end dates cannot overlap. With only a single database session at any given time, the invariant that offers cannot overlap must always be _true_ is easy to maintain with the correct implementation. But what if we had two database sessions creating offers at the same time? We can't just start locking tables to make sure the data is _consistant_ because that would incur a huge performance cost.
+
+To help deal with this issue we can use the _Aggregate_ pattern to form a _consistancy boundry_ which ensures that all our invariants are satisfied. An aggregate defines an isolated group of domain models that will be treated as a single unit with respect to data changes. Lets call our aggregate _Contracts_ where the aggregate root is _Licenses_. To form a consistancy boundry for Contracts, we add a _lock_ to licenses. The lock can be any data field, but usually a version number makes sense. Whenever we attempt to modify any data inside our contract aggregate, we try to increment the version.
+
 <!-- ![Unit of Work](./images/aggregates.png) -->
 
-![Unit of Work](./images/concurrent_update.png)
+![Concurrent Update](./images/concurrent_update.png)
+
+Using the above diagram as a reference, we can think of two transactions starting at nearly the same time. Because neither has commited, they both see that an offer can be created after 2025-08-11 and they both grab the same license version. The fastest transaction finishes by incrementing the license version and commiting. When the slower transaction tries to increment the license version, it fails. This idea of treating values as locks and letting transactions fail is a way of implementing _optimistic concurrency_. While we hope that a transaction doesn't fail, its better than it succeding and leaving the data in an inconsitant state. We simply fail, give the client the the updated state and the opportunity to retry the transaction.
+
+Optimistic concurrency works with `READ COMMITED` (usually the default transaction isolation level) and is therefore more performant that setting the transaction level up one level to `REPEATABLE READ`. Increasing isolation levels is an example of _pessemistic concurrency_ and is still a valid option or maybe even preferable in some cases. From the example it may not be completely clear why the slow transaction fails on the version update. The reason is that the query keeps version in the `WHERE` clause. Remember that we are treating all these operations as a single transaction in the UOW, but the UOW is an abstraction. In reality every data access is its own transaction. So when the transaction gets to the final step of updating the version, it fails because there is no `id = 1 AND version = 123` (for that id the version has already been updated by the faster transaction).
+
+```sql
+UPDATE products
+SET quantity = quantity - 1, version = version + 1
+WHERE id = 1 AND version = 123;
+```
+
+TODO: Explain how the repository should now only return aggregate data.
+
+TODO: Explain how service functions can be used for business logic across aggregates.
+
+## Final Remarks
