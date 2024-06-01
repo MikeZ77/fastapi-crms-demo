@@ -9,7 +9,7 @@ This code demo attempts to gives an overview of the main design concepts from th
 3. [Service Layer](#adding-the-service-layer)
 4. [Unit of Work Pattern](#unit-of-work-pattern)
 5. [Aggregates and Consistency Boundaries](#aggregates-and-consistency-boundaries)
-6. [Final Remarks](#final-remarks)
+<!-- 6. [Final Remarks](#final-remarks) -->
 
 ## Core Concepts
 
@@ -39,7 +39,9 @@ We **encapsulate** behavior and data from the the layer above. The object that d
 
 1. High level modules should not depend on low level modules. Both should depend on abstractions.
 
-2. TODO
+2. Abstractions should not depend on details. Instead, details should depend on abstractions.
+
+_**Note**: There doesn't seem to be specific examples in the first half of the book that explain point 2. Because 1 and 2 seem to say the same thing conceptually, relating ideas in the project to point 1 should provide a sufficient understanding of DIP._
 
 ### Testing
 
@@ -88,7 +90,7 @@ The _Repository_ pattern builds on MVC by creating an abstract interface (the re
 
 - The low-level module (data access layer) also depends on the repository abstraction because it must implement the interface. The data access layer provides the concrete implementation of the repository by adhering to the abstractions contract.
 
-One of the main benefits of the repository pattern is better testing. In the MVC sample code we would need to monkeypatch (replace objects at runtime) our `db.session` methods. Of course, the code could be much more complicated and require more patching to run the test. Overall this makes our test suite more difficult maintain. On the other hand, with the Repository pattern, we can have a concrete implementation FakeRepository which performs all the same database operations but in memory. For example, would inject (i.e. dependency injection) the repository into the business layer as an argument from say the API entry point where the respository would be instantiated.
+One of the main benefits of the repository pattern is better testing. In the MVC sample code we would need to monkeypatch (replace objects at runtime) our `db.session` methods. Of course, the code could be much more complicated and require more patching to run the test. Overall this makes our test suite more difficult maintain. On the other hand, with the Repository pattern, we can have a concrete implementation FakeRepository which performs all the same database operations but in memory. By instantiating the repository outside the domain model and passing it in, we can test the domain by passing it FakeRepository. This is a simple example of dependency injection (DI).
 
 ## Adding the Service Layer
 
@@ -112,15 +114,11 @@ With the _Unit of Work_ (UOW) pattern is an abstraction over _atomic_ operations
 
 A _constraint_ is a rule that restricts the possible states our model can get into. _invariant_ is a condition on a constraint that must _always hold true_. For example, suppose we implment the constraint that _offer_ start and end dates cannot overlap. With only a single database session at any given time, the invariant that offers cannot overlap must always be _true_ is easy to maintain with the correct implementation. But what if we had two database sessions creating offers at the same time? We can't just start locking tables to make sure the data is _consistant_ because that would incur a huge performance cost.
 
-To help deal with this issue we can use the _Aggregate_ pattern to form a _consistancy boundry_ which ensures that all our invariants are satisfied. An aggregate defines an isolated group of domain models that will be treated as a single unit with respect to data changes. Lets call our aggregate _Contracts_ where the aggregate root is _Licenses_. To form a consistancy boundry for Contracts, we add a _lock_ to licenses. The lock can be any data field, but usually a version number makes sense. Whenever we attempt to modify any data inside our contract aggregate, we try to increment the version.
-
-<!-- ![Unit of Work](./images/aggregates.png) -->
+To help deal with this issue we can use the _Aggregate_ pattern to form a _consistancy boundry_ which ensures that all our invariants are satisfied. An aggregate defines an isolated group of domain models that will be treated as a single unit with respect to data changes. Lets call our aggregate _Contracts_ because it seems to encapsulate the lower level details like licenses and offers. To form a consistancy boundry for Contracts we add a _lock_ to it. The lock can be any data field, but usually a version number makes sense. Whenever we attempt to modify any data inside our contract aggregate, we try to increment the version.
 
 ![Concurrent Update](./images/concurrent_update.png)
 
 Using the above diagram as a reference, we can think of two transactions starting at nearly the same time. Because neither has commited, they both see that an offer can be created after 2025-08-11 and they both grab the same license version. The fastest transaction finishes by incrementing the license version and commiting. When the slower transaction tries to increment the license version, it fails. This idea of treating values as locks and letting transactions fail is a way of implementing _optimistic concurrency_. While we hope that a transaction doesn't fail, its better than it succeding and leaving the data in an inconsitant state. We simply fail, give the client the the updated state and the opportunity to retry the transaction.
-
-Optimistic concurrency works with `READ COMMITED` (usually the default transaction isolation level) and is therefore more performant that setting the transaction level up one level to `REPEATABLE READ`. Increasing isolation levels is an example of _pessemistic concurrency_ and is still a valid option or maybe even preferable in some cases. From the example it may not be completely clear why the slow transaction fails on the version update. The reason is that the query keeps version in the `WHERE` clause. Remember that we are treating all these operations as a single transaction in the UOW, but the UOW is an abstraction. In reality every data access is its own transaction. So when the transaction gets to the final step of updating the version, it fails because there is no `id = 1 AND version = 123` (for that id the version has already been updated by the faster transaction).
 
 ```sql
 UPDATE products
@@ -128,8 +126,10 @@ SET quantity = quantity - 1, version = version + 1
 WHERE id = 1 AND version = 123;
 ```
 
-TODO: Explain how the repository should now only return aggregate data.
+Optimistic concurrency works with `READ COMMITED` (usually the default transaction isolation level) and is therefore more performant that setting the transaction level up one level to `REPEATABLE READ`. Increasing isolation levels is an example of _pessemistic concurrency_ and is still a valid option or maybe even preferable in some cases. From the example it may not be completely clear why the slow transaction fails on the version update. The reason is that the query keeps version in the `WHERE` clause. Remember that we are treating all these operations as a single transaction in the UOW, but the UOW is an abstraction. In reality every data access is its own transaction. So when the transaction gets to the final step of updating the version, it fails because there is no `id = 1 AND version = 123` (for that id the version has already been updated by the faster transaction).
 
-TODO: Explain how service functions can be used for business logic across aggregates.
+Going back to the repository pattern, you may be wondering how do we scope each repository? It seems wrong to scope it 1:1 to a single table with CRUD operations since the purpose of the pattern is to abstract away the persistance layer. The idea now is that repositories should return aggregates and that aggregates are the only entities accessible to the outside world. So in our example, if we need to deal with licenses, we have to do so by going through a contract.
 
-## Final Remarks
+![Aggregates Content](./images/aggegates_content.png)
+
+Suppose we have another aggregate called content, which represents a piece of media and its associated metadata. Also note that the previously seperate `generate_offer()` function is not part of our contract model. What if we need to assign an offer to a piece of content? For business logic that doesn't naturally fit in one aggregate we can use a `domain service`. In this case the domain service will orchistrate the operation of assigning an offer to content and will be able to access each repository.
