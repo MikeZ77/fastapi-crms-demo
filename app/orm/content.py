@@ -13,7 +13,7 @@ content = Table(
     "content",
     mapper_registry.metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
-    Column("offer_id", nullable=True),
+    Column("offer_id", Integer, nullable=True),
     Column("version", Integer, nullable=False, default=1),
 )
 
