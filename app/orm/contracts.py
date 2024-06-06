@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Date, Float, ForeignKey, Integer, String, Table
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import registry, relationship
 
 import app.domain.contracts as model
@@ -18,8 +18,8 @@ licenses = Table(
     Column("id", Integer, primary_key=True, autoincrement=True),
     Column("contract_id", ForeignKey("contracts.id")),
     Column("studio", String(255), nullable=False),
-    Column("start_date", Date, nullable=False),
-    Column("end_date", Date, nullable=False),
+    Column("start_date", DateTime, nullable=False),
+    Column("end_date", DateTime, nullable=False),
 )
 
 offers = Table(
@@ -28,8 +28,8 @@ offers = Table(
     Column("id", Integer, primary_key=True, autoincrement=True),
     Column("name", String(25), nullable=False, unique=True, index=True),
     Column("price", Float, nullable=False),
-    Column("start_date", Date, nullable=False),
-    Column("end_date", Date, nullable=False),
+    Column("start_date", DateTime, nullable=False),
+    Column("end_date", DateTime, nullable=False),
 )
 
 
@@ -51,11 +51,11 @@ def start_mappers():
     # Maps our domain models to our database tables using the imperative approach
 
     # Maps our Offers domain model 1:1 with our offers table
-    offer_map = mapper_registry.map_imperatively(model.Offers, offers)
+    offer_map = mapper_registry.map_imperatively(model.Offer, offers)
     # When we use a FK, we need to define the type of relationship
     # licenses and offers have a N:N relationship
     license_map = mapper_registry.map_imperatively(
-        model.Licenses,
+        model.License,
         licenses,
         properties={
             # licenses has the attribute _offers which holds a set of Offers
@@ -63,12 +63,12 @@ def start_mappers():
             # if we wanted offers to have a set of Licenses, we would pass back_populates
             "_offers": relationship(
                 offer_map, secondary=assigned_offers, collection_class=set
-            )
+            ),
         },
     )
     # contracts has a 1:N relationship with licenses
     mapper_registry.map_imperatively(
-        model.Contracts,
+        model.Contract,
         contracts,
         properties={"licenses": relationship(license_map, collection_class=list)},
     )
