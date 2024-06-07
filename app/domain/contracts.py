@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -13,10 +14,11 @@ class InvalidOfferData(Exception): ...
 
 class Contract:
     def __init__(self, licenses: list[License], version: int = 0):
+        self.contract_id = uuid.uuid4()
         self.licenses = licenses
         self.version = version
 
-    def generate_offer(self, studio: int, offer: Offer):
+    def generate_offer(self, studio: str, offer: Offer):
         """
         Generates an offer for the requested studio by finding an availble time slot.
 
@@ -51,6 +53,7 @@ class License:
     def __init__(
         self, contract_id: int, studio: datetime, start_date: datetime, end_date: str
     ):
+        self.license_id = uuid.uuid4()
         self.contract_id = contract_id
         self.studio = studio
         self.start_date = start_date
@@ -63,7 +66,7 @@ class License:
         self.end_date - self.start_date
 
     def insert_offer(self, new_offer: Offer):
-        # Checing for overlapping offers
+        # Checking for overlapping offers
         conflict = next(
             (
                 offer

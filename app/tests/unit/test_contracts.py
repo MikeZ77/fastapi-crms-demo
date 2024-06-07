@@ -1,8 +1,9 @@
 from datetime import datetime
+from functools import partial
 
 import pytest
 
-from app.domain.contracts import InvalidOfferData, License, Offer
+from app.domain.contracts import Contract, InvalidOfferData, License, Offer
 
 
 def test_can_insert_offer_with_available_slot(test_data):
@@ -24,6 +25,22 @@ def test_cannot_insert_overlapping_old_offer(test_data):
     license._offers.add(old_offer)
     license._offers.add(future_offer)
     pytest.raises(InvalidOfferData, license.insert_offer, new_offer)
+
+
+def test_generate_offer(test_data):
+    license = create_license(test_data)
+    offer, *_ = create_offers(test_data)
+    contract = Contract(licenses=[license])
+    contract.generate_offer("DISNEY", offer)
+    assert offer in license._offers
+
+
+def test_generate_offer_no_matching_studio(test_data):
+    license = create_license(test_data)
+    license.studio = "PIXAR"
+    offer, *_ = create_offers(test_data)
+    contract = Contract(licenses=[license])
+    pytest.raises(InvalidOfferData, partial(contract.generate_offer, "DISNEY", offer))
 
 
 def create_license(test_data) -> License:

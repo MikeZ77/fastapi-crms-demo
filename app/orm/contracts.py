@@ -1,4 +1,14 @@
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Table
+from sqlalchemy import (
+    UUID,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Table,
+)
 from sqlalchemy.orm import registry, relationship
 
 import app.domain.contracts as model
@@ -9,17 +19,21 @@ contracts = Table(
     "contracts",
     mapper_registry.metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("contract_id", UUID(as_uuid=True), unique=True, nullable=False),
     Column("version", Integer, nullable=False, default=1),
+    Index("ix_contracts_contract_id", "contract_id"),
 )
 
 licenses = Table(
     "licenses",
     mapper_registry.metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
-    Column("contract_id", ForeignKey("contracts.id")),
+    Column("license_id", UUID(as_uuid=True), unique=True, nullable=False),
+    Column("contract_id", ForeignKey("contracts.contract_id")),
     Column("studio", String(255), nullable=False),
     Column("start_date", DateTime, nullable=False),
     Column("end_date", DateTime, nullable=False),
+    Index("ix_licenses_license_id", "license_id"),
 )
 
 offers = Table(
@@ -72,3 +86,15 @@ def start_mappers():
         contracts,
         properties={"licenses": relationship(license_map, collection_class=list)},
     )
+
+
+# NOTE:
+# Because we are doing imperative mapping and not declarative mapping, we create the uuid
+# inside the class.
+#
+# as_uuid=True means that sqlalchemy will convert the uuid back to a python uuid object
+#
+# With the declarative approach, you would probably do something like this:
+# Column("contract_id", UUID(as_uuid=True), unique=True, nullable=False, default=uuid.uuid4)
+#
+# If you wanted the database to generate the uuid, would would use server_default

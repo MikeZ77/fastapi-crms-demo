@@ -5,3 +5,8 @@ from .contracts import start_mappers as start_contracts_mappers
 
 registries = [content_mapper_registry, contracts_mapper_registry]
 mappers = [start_content_mappers, start_contracts_mappers]
+
+
+def start_all_mappers():
+    for mapper in mappers:
+        mapper()
