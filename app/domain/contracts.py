@@ -14,6 +14,7 @@ class InvalidOfferData(Exception): ...
 
 class Contract:
     def __init__(self, licenses: list[License], version: int = 0):
+        # Note: Never use mutable default arguments in Python
         self.contract_id = uuid.uuid4()
         self.licenses = licenses
         self.version = version
@@ -42,7 +43,7 @@ class EndDateDescriptor:
 
     def __set__(self, instance: License, value: datetime):
         # We can assume that the pydantic model has already validated the date format
-        if value < instance.start_date:
+        if value > instance.start_date:
             raise InvalidLicenseDate("End date must be after start date")
         instance.__dict__[self.name] = value
 
@@ -50,11 +51,8 @@ class EndDateDescriptor:
 class License:
     end_date = EndDateDescriptor("end_date")
 
-    def __init__(
-        self, contract_id: int, studio: datetime, start_date: datetime, end_date: str
-    ):
+    def __init__(self, studio: str, start_date: datetime, end_date: datetime):
         self.license_id = uuid.uuid4()
-        self.contract_id = contract_id
         self.studio = studio
         self.start_date = start_date
         self.end_date = end_date

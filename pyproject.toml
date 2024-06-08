@@ -17,6 +17,7 @@ psycopg2-binary = "^2.9.9"
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.1"
 ruff = "^0.4.7"
+debugpy = "^1.8.1"
 
 [tool.ruff.lint]
 unfixable = ["F401"]

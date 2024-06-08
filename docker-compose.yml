@@ -2,18 +2,19 @@ version: "3.8"
 name: fastapi-crms-demo
 
 services:
-  app:
+  crms:
     build:
       context: .
     ports:
-      - "8000:8000"
+      - "8000:80"
+      # - "5678:5678"
     depends_on:
       - db
     environment:
       - DB_HOST=postgres
       - DB_PASSWORD=postgres
     volumes:
-      - ./app:/app
+      - ./app:/src/app
   pgadmin:
     image: dpage/pgadmin4:8.5
     container_name: pgadmin4
@@ -33,6 +34,7 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=crms
     volumes:
       - local_pgdata:/var/lib/postgresql/data
 

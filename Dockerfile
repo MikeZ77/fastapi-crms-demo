@@ -10,6 +10,6 @@ RUN pip3 install poetry
     
 WORKDIR /src
 COPY . .
-RUN poetry install --no-dev
+RUN poetry install
 
-CMD poetry run fastapi dev app/main.py
+CMD poetry run fastapi run app/main.py --port 80 --reload
