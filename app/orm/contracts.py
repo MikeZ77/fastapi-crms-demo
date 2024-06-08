@@ -9,11 +9,10 @@ from sqlalchemy import (
     String,
     Table,
 )
-from sqlalchemy.orm import registry, relationship
+from sqlalchemy.orm import relationship
 
 import app.domain.contracts as model
-
-mapper_registry = registry()
+from app.orm import mapper_registry
 
 contracts = Table(
     "contracts",

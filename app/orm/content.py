@@ -1,9 +1,7 @@
 from sqlalchemy import Column, Integer, Table
-from sqlalchemy.orm import registry
 
 import app.domain.content as model
-
-mapper_registry = registry()
+from app.orm import mapper_registry
 
 # Content can have an offer assigned to it, but we do not create this relationship
 # because aggegrates should be treated as seperate units in the database. This
