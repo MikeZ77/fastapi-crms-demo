@@ -8,7 +8,7 @@ from app.services.unit_of_work import AbstractUnitOfWork
 # You would expect it to have many more data attributes.
 def add_contract(contract: Contract, uow: AbstractUnitOfWork):
     with uow:
-        licenses = [License(*license) for license in contract.licenses]
+        licenses = [License(**(license.__dict__)) for license in contract.licenses]
         contract = Contract(licenses)
         id = uow.contracts.add_contract(contract)
         uow.commit()

@@ -37,19 +37,22 @@ class Contract:
         self.version += 1
 
 
+# TODO: It would be cleaner to use Descriptors instead of property setters
+# but it seems like maybe SQLAlchemy keeps its own mapping state and we would need to
+# set end_date in there instead. Like this end_date is not included in any queries.
 class EndDateDescriptor:
     def __init__(self, name=None):
         self.name = name
 
     def __set__(self, instance: License, value: datetime):
         # We can assume that the pydantic model has already validated the date format
-        if value > instance.start_date:
+        if value <= instance.start_date:
             raise InvalidLicenseDate("End date must be after start date")
         instance.__dict__[self.name] = value
 
 
 class License:
-    end_date = EndDateDescriptor("end_date")
+    # end_date = EndDateDescriptor("end_date")
 
     def __init__(self, studio: str, start_date: datetime, end_date: datetime):
         self.license_id = uuid.uuid4()
@@ -62,6 +65,16 @@ class License:
     @property
     def period(self):
         self.end_date - self.start_date
+
+    @property
+    def end_date(self):
+        return self._end_date
+
+    @end_date.setter
+    def end_date(self, value: datetime):
+        if value > self.start_date:
+            raise InvalidLicenseDate("End date must be after start date")
+        self._end_date = value
 
     def insert_offer(self, new_offer: Offer):
         # Checking for overlapping offers
@@ -92,25 +105,3 @@ class Offer:
     price: int
     start_date: datetime
     end_date: datetime
-
-
-# NOTE:
-# 1. See EndDateDescriptor:
-#   A Python Descriptor can intercept __get__, __set__, __delete__ etc. which makes
-#   it useful for validating instance variables without the clutter of @propert or
-#   @property.setter. For example, you could move descriptors to a separate module.
-#
-#   E.g.
-#
-#   @property
-#   def end_date(self):
-#       return self._end_date
-#
-#   @property.setter
-#   def end_date(self, _end_date: str):
-#     if _end_date >= self.start_date:
-#         raise InvalidLicenseDate("End date must be after start date")
-#     self._end_date = _end_date
-#
-#   We would also probably want to map _end_date to the db column end_date
-#   properties={"_end_date": licenses.columns.end_date}

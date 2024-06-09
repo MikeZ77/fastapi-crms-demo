@@ -30,8 +30,8 @@ licenses = Table(
     Column("license_id", UUID(as_uuid=True), unique=True, nullable=False),
     Column("contract_id", ForeignKey("contracts.contract_id")),
     Column("studio", String(255), nullable=False),
-    Column("start_date", DateTime, nullable=False),
-    Column("end_date", DateTime, nullable=False),
+    Column("start_date", DateTime(timezone=True), nullable=False),
+    Column("end_date", DateTime(timezone=True), nullable=False),
     Index("ix_licenses_license_id", "license_id"),
 )
 
@@ -41,8 +41,8 @@ offers = Table(
     Column("id", Integer, primary_key=True, autoincrement=True),
     Column("name", String(25), nullable=False, unique=True, index=True),
     Column("price", Float, nullable=False),
-    Column("start_date", DateTime, nullable=False),
-    Column("end_date", DateTime, nullable=False),
+    Column("start_date", DateTime(timezone=True), nullable=False),
+    Column("end_date", DateTime(timezone=True), nullable=False),
 )
 
 
@@ -74,6 +74,7 @@ def start_mappers():
             # licenses has the attribute _offers which holds a set of Offers
             # secondary is the association table that holds the relationship between licenses and offers
             # if we wanted offers to have a set of Licenses, we would pass back_populates
+            "_end_date": licenses.columns.end_date,
             "_offers": relationship(
                 offer_map, secondary=assigned_offers, collection_class=set
             ),

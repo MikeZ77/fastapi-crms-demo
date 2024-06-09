@@ -5,6 +5,7 @@ RUN apk add --no-cache make
 RUN apk add libpq
 
 EXPOSE 8000
+EXPOSE 5679
 
 RUN pip3 install poetry
     

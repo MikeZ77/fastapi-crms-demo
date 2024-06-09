@@ -1,8 +1,8 @@
 """Initial migration
 
-Revision ID: 363d71e0823f
+Revision ID: 72d543529fa8
 Revises: 
-Create Date: 2024-06-08 10:43:58.516876
+Create Date: 2024-06-09 12:29:50.664696
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '363d71e0823f'
+revision: str = '72d543529fa8'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -38,8 +38,8 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('name', sa.String(length=25), nullable=False),
     sa.Column('price', sa.Float(), nullable=False),
-    sa.Column('start_date', sa.DateTime(), nullable=False),
-    sa.Column('end_date', sa.DateTime(), nullable=False),
+    sa.Column('start_date', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('end_date', sa.DateTime(timezone=True), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_offers_name'), 'offers', ['name'], unique=True)
@@ -48,8 +48,8 @@ def upgrade() -> None:
     sa.Column('license_id', sa.UUID(), nullable=False),
     sa.Column('contract_id', sa.UUID(), nullable=True),
     sa.Column('studio', sa.String(length=255), nullable=False),
-    sa.Column('start_date', sa.DateTime(), nullable=False),
-    sa.Column('end_date', sa.DateTime(), nullable=False),
+    sa.Column('start_date', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('end_date', sa.DateTime(timezone=True), nullable=False),
     sa.ForeignKeyConstraint(['contract_id'], ['contracts.contract_id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('license_id')

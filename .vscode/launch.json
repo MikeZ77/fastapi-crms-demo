@@ -2,26 +2,26 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Local",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal"
-        },
-        {
             "name": "Remote",
             "type": "debugpy",
             "request": "attach",
             "connect": {
                 "host": "localhost",
-                "port": 5678
+                "port": 5679
             },
             "pathMappings": [
                 {
                     "localRoot": "${workspaceFolder}",
-                    "remoteRoot": "/app"
+                    "remoteRoot": "."
                 }
             ]
+        },
+        {
+            "name": "Local",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
         }
     ]
 }
