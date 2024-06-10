@@ -58,7 +58,7 @@ class License:
         self.license_id = uuid.uuid4()
         self.studio = studio
         self.start_date = start_date
-        self.end_date = end_date
+        self.end_date_ = end_date
         self._offers: set[Offer] = set()
 
     # Getters can be useful for performing small calculations on existing properties
@@ -72,7 +72,7 @@ class License:
 
     @end_date.setter
     def end_date(self, value: datetime):
-        if value > self.start_date:
+        if value <= self.start_date:
             raise InvalidLicenseDate("End date must be after start date")
         self._end_date = value
 

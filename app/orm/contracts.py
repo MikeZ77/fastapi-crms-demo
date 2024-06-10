@@ -20,6 +20,7 @@ contracts = Table(
     Column("id", Integer, primary_key=True, autoincrement=True),
     Column("contract_id", UUID(as_uuid=True), unique=True, nullable=False),
     Column("version", Integer, nullable=False, default=1),
+    Column("a_new_column", String, nullable=True),
     Index("ix_contracts_contract_id", "contract_id"),
 )
 
@@ -74,7 +75,7 @@ def start_mappers():
             # licenses has the attribute _offers which holds a set of Offers
             # secondary is the association table that holds the relationship between licenses and offers
             # if we wanted offers to have a set of Licenses, we would pass back_populates
-            "_end_date": licenses.columns.end_date,
+            "end_date_": licenses.columns.end_date,
             "_offers": relationship(
                 offer_map, secondary=assigned_offers, collection_class=set
             ),

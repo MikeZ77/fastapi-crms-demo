@@ -18,7 +18,7 @@ class AbstractUnitOfWork(abc.ABC):
     def __enter__(self) -> AbstractUnitOfWork:
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, *_):
         self.rollback()
 
     @abc.abstractmethod

@@ -1,5 +1,30 @@
 # fastapi-crms-demo
 
+## Commands
+
+Run the docker-compose stack:
+
+```
+make up
+make down
+```
+
+Create migrations:
+
+```
+alembic revision --autogenerate -m "Initial migration"
+alembic revision --autogenerate -m "I added a new column named my_column"
+```
+
+Upgrade or downgrade to some revision id:
+
+```
+alembic upgrade head
+alembic upgrade <revision_id>
+alembic downgrade base
+alembic downgrade <revision_id>
+```
+
 ## Overview
 
 This code demo attempts to gives an overview of the main design concepts from the book **Architecture Patterns with Python** available at https://www.cosmicpython.com. The goal is to build a simple CRMS (Content Rights Management System) using a DDD (Domain Driven Design) approach.

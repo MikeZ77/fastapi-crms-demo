@@ -1,12 +1,12 @@
-from datetime import datetime
 from functools import partial
 
 import pytest
+from dateutil.parser import parse
 
 from app.domain.contracts import Contract, InvalidOfferData, License, Offer
 
 
-def test_can_insert_offer_with_available_slot(test_data):
+def test_domain_can_insert_offer_with_available_slot(test_data):
     license = create_license(test_data)
     old_offer, new_offer, future_offer = create_offers(test_data)
 
@@ -15,10 +15,8 @@ def test_can_insert_offer_with_available_slot(test_data):
     assert license.insert_offer(new_offer) is None
 
 
-def test_cannot_insert_overlapping_old_offer(test_data):
-    test_data["old_offer"]["end_date"] = datetime.fromisoformat(
-        "2022-05-01T12:34:56.123445"
-    )
+def test_domain_cannot_insert_overlapping_old_offer(test_data):
+    test_data["old_offer"]["end_date"] = parse("2022-05-01T12:34:56.123445Z")
     license = create_license(test_data)
     old_offer, new_offer, future_offer = create_offers(test_data)
 
@@ -27,7 +25,7 @@ def test_cannot_insert_overlapping_old_offer(test_data):
     pytest.raises(InvalidOfferData, license.insert_offer, new_offer)
 
 
-def test_generate_offer(test_data):
+def test_domain_generate_offer(test_data):
     license = create_license(test_data)
     offer, *_ = create_offers(test_data)
     contract = Contract(licenses=[license])
@@ -35,7 +33,7 @@ def test_generate_offer(test_data):
     assert offer in license._offers
 
 
-def test_generate_offer_no_matching_studio(test_data):
+def test_domain_generate_offer_no_matching_studio(test_data):
     license = create_license(test_data)
     license.studio = "PIXAR"
     offer, *_ = create_offers(test_data)

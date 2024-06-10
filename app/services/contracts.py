@@ -13,3 +13,12 @@ def add_contract(contract: Contract, uow: AbstractUnitOfWork):
         id = uow.contracts.add_contract(contract)
         uow.commit()
     return id
+
+
+def get_contract(contract_id: str, uow: AbstractUnitOfWork):
+    with uow:
+        # The SQLAlchemy model cannot be used outside the session
+        # TODO: Find or use a method to serialize the SQLAlchemy model to a dict
+        contract = uow.contracts.get_contract(contract_id)
+        licenses = [license.__dict__ for license in contract.licenses]
+        return {**contract.__dict__, "licenses": licenses}

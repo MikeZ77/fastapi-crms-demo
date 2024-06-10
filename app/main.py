@@ -3,7 +3,7 @@ from alembic import command
 from alembic.config import Config
 from fastapi import FastAPI
 
-# from app.middleware.exception_handlers import license_exception_handler
+from app.middleware.exception_handlers import ExceptionHandlers
 from app.orm import map_models
 from app.routes.router import api_router
 
@@ -21,5 +21,5 @@ except RuntimeError:
 
 app = FastAPI()
 # Register our exception handling and routes
-# app.add_exception_handler(license_exception_handler())
+ExceptionHandlers.register_exception_handlers(app)
 app.include_router(api_router, prefix="/api")
