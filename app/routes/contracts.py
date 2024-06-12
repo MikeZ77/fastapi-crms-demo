@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from fastapi import APIRouter
-from pydantic import UUID4, BaseModel, ConfigDict, Field, constr
+from pydantic import UUID4, BaseModel, constr
 
 from app.services.contracts import add_contract, get_contract
 from app.services.unit_of_work import SqlAlchemyUnitOfWork
@@ -18,10 +18,9 @@ class Contract(BaseModel):
 # We can use pydantic for "data" validation and have the domain model validate
 # business rules. #e.g. use AwareDatetime to validate datetimes have a timezone
 class License(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
     studio: str = constr(max_length=255)
     start_date: datetime
-    end_date_: datetime = Field(alias="end_date")
+    end_date: datetime
 
 
 # I use the convention of "insert" for the endpoint because of CRUD, but in

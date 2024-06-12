@@ -15,3 +15,12 @@ down:
 
 down-volume:
 	docker-compose down --volumes
+
+test-unit:
+	pytest -m unit
+
+test-integration:
+	pytest -m integration
+
+tets-e2e:
+	pytest -m e2e

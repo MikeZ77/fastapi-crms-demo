@@ -1,0 +1,7 @@
+version: "3.8"
+services:
+  db:
+    volumes:
+      - test_pgdata:/var/lib/postgresql/data
+volumes:
+  test_pgdata:

@@ -1,9 +1,17 @@
+import subprocess
+from typing import Callable
+
 import pytest
+from _pytest.fixtures import SubRequest
+from _pytest.python import Function
 from dateutil.parser import parse
 from sqlalchemy import create_engine
 from sqlalchemy.orm import clear_mappers, sessionmaker
 
 from app.orm import mapper_registry, mappers
+
+# NOTE: With more utilities, fixtures, or hooks, you would likely want to move these
+# into their own files and import them into a main conftest.py.
 
 
 @pytest.fixture
@@ -24,6 +32,33 @@ def session_factory(in_memory_db):
 @pytest.fixture
 def session(session_factory):
     return session_factory()
+
+
+def pytest_collection_modifyitems(items: list[Function]):
+    for test_fn in items:
+        if "test_service_" in test_fn.name:
+            test_fn.add_marker(pytest.mark.integration)
+
+        if "test_api_" in test_fn.name:
+            test_fn.add_marker(pytest.mark.e2e)
+
+        if "test_domain_" in test_fn.name:
+            test_fn.add_marker(pytest.mark.unit)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def bring_up_api_stack(request: SubRequest):
+    has_e2e_test = False
+    for test_fn in request.session.items:
+        for marker in test_fn.own_markers:
+            if marker.name == "e2e":
+                has_e2e_test = True
+
+    if not has_e2e_test:
+        return
+
+    print()
+    ...
 
 
 @pytest.fixture(scope="function")
