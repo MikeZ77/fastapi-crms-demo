@@ -9,7 +9,7 @@ from sqlalchemy.orm.session import Session
 from app.repositories.contracts import AggregateRepository as ContractRepository
 from app.utils import config
 
-DEFAULT_SESSION_FACTORY = sessionmaker(bind=create_engine(config.get_postgres_uri()))
+SessionFactory = sessionmaker(bind=create_engine(config.get_postgres_uri()))
 
 
 class AbstractUnitOfWork(abc.ABC):
@@ -31,7 +31,7 @@ class AbstractUnitOfWork(abc.ABC):
 
 
 class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
-    def __init__(self, session_factory=DEFAULT_SESSION_FACTORY):
+    def __init__(self, session_factory=SessionFactory):
         self.session_factory = session_factory
 
     def __enter__(self):

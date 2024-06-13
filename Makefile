@@ -16,6 +16,12 @@ down:
 down-volume:
 	docker-compose down --volumes
 
+up-test-stack:
+	docker-compose -f docker-compose.yml -f docker-compose-test.yml up -d
+
+down-test-stack:
+	docker-compose -f docker-compose.yml -f docker-compose-test.yml down --volumes
+
 test-unit:
 	pytest -m unit
 
