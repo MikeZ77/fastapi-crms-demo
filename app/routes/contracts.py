@@ -3,9 +3,9 @@ from __future__ import annotations
 from datetime import datetime
 
 from fastapi import APIRouter
-from pydantic import UUID4, BaseModel, constr
+from pydantic import UUID4, AliasChoices, BaseModel, Field, constr
 
-from app.services.contracts import add_contract, get_contract
+from app.services.contracts import add_contract, add_offers, get_contract
 from app.services.unit_of_work import SqlAlchemyUnitOfWork
 
 router = APIRouter()
@@ -20,7 +20,20 @@ class Contract(BaseModel):
 class License(BaseModel):
     studio: str = constr(max_length=255)
     start_date: datetime
+    end_date: datetime = Field(alias=AliasChoices("_end_date", "end_date"))
+
+
+class Offer(BaseModel):
+    name: str = constr(max_length=20)
+    price: float
+    start_date: datetime
     end_date: datetime
+
+
+class OfferPayload(BaseModel):
+    contract_id: UUID4
+    studio: str
+    offers: list[Offer]
 
 
 # I use the convention of "insert" for the endpoint because of CRUD, but in
@@ -39,3 +52,13 @@ def insert_contract(contract: Contract):
 @router.get("/{contract_id}", status_code=200)
 def read_contract(contract_id: UUID4) -> Contract:
     return get_contract(contract_id, SqlAlchemyUnitOfWork())
+
+
+@router.post("/license/offer", status_code=201)
+def insert_offers(offer_payload: OfferPayload):
+    add_offers(
+        offer_payload.contract_id,
+        offer_payload.studio,
+        offer_payload.offers,
+        SqlAlchemyUnitOfWork(),
+    )

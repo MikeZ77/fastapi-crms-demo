@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from app.domain.contracts import Contract, License
+from pydantic import UUID4
+
+from app.domain.contracts import Contract, License, Offer
 from app.services.unit_of_work import AbstractUnitOfWork
 
 
@@ -8,17 +10,30 @@ from app.services.unit_of_work import AbstractUnitOfWork
 # You would expect it to have many more data attributes.
 def add_contract(contract: Contract, uow: AbstractUnitOfWork):
     with uow:
-        licenses = [License(**(license.__dict__)) for license in contract.licenses]
+        licenses = [License.from_pydantic(license) for license in contract.licenses]
         contract = Contract(licenses)
         id = uow.contracts.add_contract(contract)
         uow.commit()
     return id
 
 
-def get_contract(contract_id: str, uow: AbstractUnitOfWork):
+def get_contract(contract_id: UUID4, uow: AbstractUnitOfWork):
     with uow:
-        # The SQLAlchemy model cannot be used outside the session
-        # TODO: Find or use a method to serialize the SQLAlchemy model to a dict
+        # NOTE: This is important to understand. get_contract does a left join on licenses
+        # since in this example we need to return licenses with the contract.
+        # If we didn't do this left join, we could still get licenses by accessing
+        # contract.licenses which calls the db to get licenses. This is the default aka
+        # lazy loading because contract.licesnses doesnt exist until we call it.
+        # This is why we can't use contract outside the uow/session. When we map our
+        # data to our domain models, it becomes an SQLAlchemy object
         contract = uow.contracts.get_contract(contract_id)
-        licenses = [license.__dict__ for license in contract.licenses]
-        return {**contract.__dict__, "licenses": licenses}
+        return contract.sqlalchemy_to_dict()
+
+
+def add_offers(
+    contract_id: UUID4, studio: str, offers: list[Offer], uow: AbstractUnitOfWork
+):
+    with uow:
+        contract = uow.contracts.get_contract(contract_id)
+        for offer in offers:
+            contract.generate_offer(studio, Offer.from_pydantic(offer))

@@ -75,7 +75,7 @@ def start_mappers():
             # licenses has the attribute _offers which holds a set of Offers
             # secondary is the association table that holds the relationship between licenses and offers
             # if we wanted offers to have a set of Licenses, we would pass back_populates
-            "end_date_": licenses.columns.end_date,
+            "_end_date": licenses.columns.end_date,
             "_offers": relationship(
                 offer_map, secondary=assigned_offers, collection_class=set
             ),

@@ -1,5 +1,6 @@
 import abc
 
+from sqlalchemy.orm import joinedload
 from sqlalchemy.orm.session import Session
 
 from app.domain import contracts as model
@@ -26,7 +27,10 @@ class AggregateRepository(AbstractAggregateRepository):
 
     def get_contract(self, contract_id: str):
         return (
-            self.session.query(model.Contract).filter_by(contract_id=contract_id).one()
+            self.session.query(model.Contract)
+            .options(joinedload(model.Contract.licenses))
+            .filter_by(contract_id=contract_id)
+            .one()
         )
 
         # If we wanted to use raw SQL ...

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime
+
+from pydantic import BaseModel
 
 
 # Creating custom exceptions that refelct the domain or business jargon is useful.
@@ -12,7 +15,35 @@ class InvalidLicenseDate(Exception): ...
 class InvalidOfferData(Exception): ...
 
 
-class Contract:
+class DomainModel:
+    @classmethod
+    def from_pydantic(cls, model: BaseModel):
+        return cls(**model.model_dump())
+
+    def sqlalchemy_to_dict(self) -> dict:
+        # NOTE: This utility method is not complte, it just shows how you could go about
+        # serializing a SQLAlchemy model to a dict.
+        def to_dict(attr):
+            my_dict = {}
+            if not isinstance(attr, DomainModel) and not (
+                isinstance(attr, Iterable)
+                and any(isinstance(item, DomainModel) for item in attr)
+            ):
+                return attr
+            else:
+                for field, value in attr.__dict__.items():
+                    if isinstance(value, list):
+                        my_dict[field] = [to_dict(item) for item in value]
+                    elif isinstance(value, set):
+                        my_dict[field] = {to_dict(item) for item in value}
+                    else:
+                        my_dict[field] = to_dict(value)
+            return my_dict
+
+        return to_dict(self)
+
+
+class Contract(DomainModel):
     def __init__(self, licenses: list[License], version: int = 0):
         # Note: Never use mutable default arguments in Python
         self.contract_id = uuid.uuid4()
@@ -51,14 +82,14 @@ class EndDateDescriptor:
         instance.__dict__[self.name] = value
 
 
-class License:
+class License(DomainModel):
     # end_date = EndDateDescriptor("end_date")
 
     def __init__(self, studio: str, start_date: datetime, end_date: datetime):
         self.license_id = uuid.uuid4()
         self.studio = studio
         self.start_date = start_date
-        self.end_date_ = end_date
+        self._end_date = end_date
         self._offers: set[Offer] = set()
 
     # Getters can be useful for performing small calculations on existing properties
@@ -99,8 +130,9 @@ class License:
 
 # This is a value object rather than an entitiy so a dataclass is useful.
 # With frozen=True and eq=True (default) then __hash__ is implemented for us.
-@dataclass(frozen=True)
-class Offer:
+# @dataclass(frozen=True)
+@dataclass(unsafe_hash=True)
+class Offer(DomainModel):
     name: str
     price: int
     start_date: datetime
