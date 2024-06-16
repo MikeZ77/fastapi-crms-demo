@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Table
+from sqlalchemy import UUID, Column, Index, Integer, String, Table
 
 import app.domain.content as model
 from app.orm import mapper_registry
@@ -11,8 +11,10 @@ content = Table(
     "content",
     mapper_registry.metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
-    Column("offer_id", Integer, nullable=True),
+    Column("content_id", UUID(as_uuid=True), nullable=False, unique=True),
+    Column("offer_name", String, nullable=True),
     Column("version", Integer, nullable=False, default=1),
+    Index("ix_content_content_id", "content_id"),
 )
 
 

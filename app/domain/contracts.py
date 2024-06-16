@@ -21,7 +21,7 @@ class DomainModel:
         return cls(**model.model_dump())
 
     def sqlalchemy_to_dict(self) -> dict:
-        # NOTE: This utility method is not complte, it just shows how you could go about
+        # NOTE: This utility method is not complete, it just shows how you could go about
         # serializing a SQLAlchemy model to a dict.
         def to_dict(attr):
             my_dict = {}

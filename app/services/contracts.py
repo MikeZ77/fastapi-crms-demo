@@ -3,12 +3,13 @@ from __future__ import annotations
 from pydantic import UUID4
 
 from app.domain.contracts import Contract, License, Offer
+from app.routes.types import ContractRequest, OfferRequest
 from app.services.unit_of_work import AbstractUnitOfWork
 
 
 # For the purposes of this example code, contract is just an empty shell.
 # You would expect it to have many more data attributes.
-def add_contract(contract: Contract, uow: AbstractUnitOfWork):
+def add_contract(contract: ContractRequest, uow: AbstractUnitOfWork):
     with uow:
         licenses = [License.from_pydantic(license) for license in contract.licenses]
         contract = Contract(licenses)
@@ -30,10 +31,9 @@ def get_contract(contract_id: UUID4, uow: AbstractUnitOfWork):
         return contract.sqlalchemy_to_dict()
 
 
-def add_offers(
-    contract_id: UUID4, studio: str, offers: list[Offer], uow: AbstractUnitOfWork
-):
+def add_offers(offer_: OfferRequest, uow: AbstractUnitOfWork):
     with uow:
-        contract = uow.contracts.get_contract(contract_id)
-        for offer in offers:
-            contract.generate_offer(studio, Offer.from_pydantic(offer))
+        contract = uow.contracts.get_contract(offer_.contract_id)
+        for offer in offer_.offers:
+            contract.generate_offer(offer_.studio, Offer.from_pydantic(offer))
+        uow.commit()

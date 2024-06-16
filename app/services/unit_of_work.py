@@ -6,6 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
 
+from app.repositories.content import AggregateRepository as ContentRepository
 from app.repositories.contracts import AggregateRepository as ContractRepository
 from app.utils import config
 
@@ -14,6 +15,7 @@ SessionFactory = sessionmaker(bind=create_engine(config.get_postgres_uri()))
 
 class AbstractUnitOfWork(abc.ABC):
     contracts: ContractRepository
+    content: ContentRepository
 
     def __enter__(self) -> AbstractUnitOfWork:
         return self
@@ -37,6 +39,7 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
     def __enter__(self):
         self.session: Session = self.session_factory()
         self.contracts = ContractRepository(self.session)
+        self.content = ContentRepository(self.session)
         return super().__enter__()
 
     def __exit__(self, *args):

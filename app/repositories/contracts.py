@@ -15,6 +15,10 @@ class AbstractAggregateRepository(abc.ABC):
     def get_contract(self, contract_id: int):
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def get_contracts(self):
+        raise NotImplementedError
+
 
 class AggregateRepository(AbstractAggregateRepository):
     def __init__(self, session: Session):
@@ -37,3 +41,6 @@ class AggregateRepository(AbstractAggregateRepository):
         # return self.session.execute(
         #     "SELECT * FROM contracts WHERE id=:val", {"id": contract_id}
         # )
+
+    def get_contracts(self):
+        return self.session.query(model.Contract).all()
